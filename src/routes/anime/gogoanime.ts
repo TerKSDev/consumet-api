@@ -1,133 +1,61 @@
 import { FastifyRequest, FastifyReply, FastifyInstance, RegisterOptions } from 'fastify';
 import { ANIME } from '@consumet/extensions';
-import { StreamingServers } from '@consumet/extensions/dist/models';
 
 const routes = async (fastify: FastifyInstance, options: RegisterOptions) => {
-  const gogoanime = new ANIME.Gogoanime();
+  // 這裡改用 Hianime，因為 Gogoanime 已經從套件中被移除了
+  const provider = new ANIME.AnimePahe();
 
   fastify.get('/gogoanime', (_, rp) => {
     rp.status(200).send({
-      intro:
-        "Welcome to the gogoanime provider: check out the provider's website @ https://gogoanime.gg/",
-      routes: [
-        '/:query',
-        '/info/:id',
-        '/watch/:episodeId',
-        '/servers/:episodeId',
-        '/top-airing',
-        '/recent-episodes',
-      ],
-      documentation: 'https://docs.consumet.org/#tag/gogoanime',
+      message: 'Hianime provider is active (Redirected from Gogoanime route)',
+      routes: ['/:query', '/info/:id', '/watch/:episodeId'],
     });
   });
 
+  // 搜索動漫
   fastify.get(
     '/gogoanime/:query',
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const query = (request.params as { query: string }).query;
-      const page = (request.query as { page: number }).page || 1;
+      const { query } = request.params as { query: string };
+      console.log(`Searching for ${query}`);
 
-      const res = await gogoanime.search(query, page);
-
-      reply.status(200).send(res);
-    }
+      try {
+        const res = await provider.search(query);
+        console.log('Search Result: ', res);
+        reply.status(200).send(res);
+      } catch (err: any) {
+        console.error('Search Error: ', err);
+        reply.status(500).send({ error: err.message });
+      }
+    },
   );
 
+  // 獲取詳情
   fastify.get(
     '/gogoanime/info/:id',
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const id = decodeURIComponent((request.params as { id: string }).id);
-
+      const { id } = request.params as { id: string };
       try {
-        const res = await gogoanime
-          .fetchAnimeInfo(id)
-          .catch((err) => reply.status(404).send({ message: err }));
-
+        const res = await provider.fetchAnimeInfo(id);
         reply.status(200).send(res);
-      } catch (err) {
-        reply
-          .status(500)
-          .send({ message: 'Something went wrong. Please try again later.' });
+      } catch (err: any) {
+        reply.status(404).send({ message: 'Anime info not found' });
       }
-    }
+    },
   );
 
+  // 獲取播放連結
   fastify.get(
     '/gogoanime/watch/:episodeId',
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const episodeId = (request.params as { episodeId: string }).episodeId;
-      const server = (request.query as { server: StreamingServers }).server;
-
-      if (server && !Object.values(StreamingServers).includes(server)) {
-        reply.status(400).send('Invalid server');
-      }
-
+      const { episodeId } = request.params as { episodeId: string };
       try {
-        const res = await gogoanime
-          .fetchEpisodeSources(episodeId, server)
-          .catch((err) => reply.status(404).send({ message: err }));
-
+        const res = await provider.fetchEpisodeSources(episodeId);
         reply.status(200).send(res);
-      } catch (err) {
-        reply
-          .status(500)
-          .send({ message: 'Something went wrong. Please try again later.' });
+      } catch (err: any) {
+        reply.status(404).send({ message: 'Sources not found' });
       }
-    }
-  );
-
-  fastify.get(
-    '/gogoanime/servers/:episodeId',
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const episodeId = (request.params as { episodeId: string }).episodeId;
-
-      try {
-        const res = await gogoanime
-          .fetchEpisodeServers(episodeId)
-          .catch((err) => reply.status(404).send({ message: err }));
-
-        reply.status(200).send(res);
-      } catch (err) {
-        reply
-          .status(500)
-          .send({ message: 'Something went wrong. Please try again later.' });
-      }
-    }
-  );
-
-  fastify.get(
-    '/gogoanime/top-airing',
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      try {
-        const page = (request.query as { page: number }).page;
-
-        const res = await gogoanime.fetchTopAiring(page);
-
-        reply.status(200).send(res);
-      } catch (err) {
-        reply
-          .status(500)
-          .send({ message: 'Something went wrong. Contact developers for help.' });
-      }
-    }
-  );
-
-  fastify.get(
-    '/gogoanime/recent-episodes',
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      try {
-        const type = (request.query as { type: number }).type;
-        const page = (request.query as { page: number }).page;
-
-        const res = await gogoanime.fetchRecentEpisodes(page, type);
-
-        reply.status(200).send(res);
-      } catch (err) {
-        reply
-          .status(500)
-          .send({ message: 'Something went wrong. Contact developers for help.' });
-      }
-    }
+    },
   );
 };
 

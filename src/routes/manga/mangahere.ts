@@ -1,5 +1,5 @@
 import { FastifyRequest, FastifyReply, FastifyInstance, RegisterOptions } from 'fastify';
-import { MANGA } from 'consumet.ts';
+import { MANGA } from '@consumet/extensions';
 
 const routes = async (fastify: FastifyInstance, options: RegisterOptions) => {
   const mangahere = new MANGA.MangaHere();
@@ -22,7 +22,7 @@ const routes = async (fastify: FastifyInstance, options: RegisterOptions) => {
       const res = await mangahere.search(query, page);
 
       reply.status(200).send(res);
-    }
+    },
   );
 
   fastify.get('/mangahere/info', async (request: FastifyRequest, reply: FastifyReply) => {
