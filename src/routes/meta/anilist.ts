@@ -6,46 +6,42 @@ const routes = async (fastify: FastifyInstance, options: RegisterOptions) => {
 
   fastify.get('/anilist', (_, rp) => {
     rp.status(200).send({
-      intro:
-        "Welcome to the anilist provider: check out the provider's website @ https://anilist.co/",
-      routes: ['/:query', '/info/:id', '/watch/:episodeId'],
+      intro: 'Welcome to the anilist provider',
+      routes: ['/:query', '/info/*', '/watch/*'], // 這裡也順便更新一下說明
       documentation: 'https://docs.consumet.org/#tag/anilist',
     });
   });
 
+  // 1. 搜尋路由 (保持不變)
   fastify.get('/anilist/:query', async (request: FastifyRequest, reply: FastifyReply) => {
     const query = (request.params as { query: string }).query;
-
     const res = await anilist.search(query);
-
     reply.status(200).send(res);
   });
 
-  fastify.get(
-    '/anilist/info/:id',
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const id = decodeURIComponent((request.params as { id: string }).id);
+  // 2. 🌟 獲取詳情路由 (改成 *)
+  fastify.get('/anilist/info/*', async (request: FastifyRequest, reply: FastifyReply) => {
+    // 使用萬用字元獲取帶有斜線的 ID
+    const id = decodeURIComponent((request.params as any)['*']);
+    const isDub = (request.query as { dub?: boolean }).dub;
 
-      const isDub = (request.query as { dub?: boolean }).dub;
+    try {
+      const res = await anilist
+        .fetchAnimeInfo(id, isDub)
+        .catch((err) => reply.status(404).send({ message: err }));
 
-      try {
-        const res = await anilist
-          .fetchAnimeInfo(id, isDub)
-          .catch((err) => reply.status(404).send({ message: err }));
-
-        reply.status(200).send(res);
-      } catch (err) {
-        reply
-          .status(500)
-          .send({ message: 'Something went wrong. Contact developer for help.' });
-      }
+      reply.status(200).send(res);
+    } catch (err) {
+      reply.status(500).send({ message: 'Something went wrong.' });
     }
-  );
+  });
 
+  // 3. 🌟 獲取播放連結路由 (改成 *)
   fastify.get(
-    '/anilist/watch/:episodeId',
+    '/anilist/watch/*',
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const episodeId = (request.params as { episodeId: string }).episodeId;
+      // 使用萬用字元獲取帶有斜線的 Episode ID
+      const episodeId = (request.params as any)['*'];
 
       try {
         const res = await anilist
@@ -54,11 +50,9 @@ const routes = async (fastify: FastifyInstance, options: RegisterOptions) => {
 
         reply.status(200).send(res);
       } catch (err) {
-        reply
-          .status(500)
-          .send({ message: 'Something went wrong. Contact developer for help.' });
+        reply.status(500).send({ message: 'Something went wrong.' });
       }
-    }
+    },
   );
 };
 
