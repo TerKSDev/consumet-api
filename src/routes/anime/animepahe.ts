@@ -8,7 +8,7 @@ const routes = async (fastify: FastifyInstance, options: RegisterOptions) => {
     rp.status(200).send({
       intro:
         "Welcome to the animepahe provider: check out the provider's website @ https://animepahe.com/",
-      routes: ['/:query', '/info/:id', '/watch/:episodeId'],
+      routes: ['/:query', '/info/*', '/watch/*'],
       documentation: 'https://docs.consumet.org/#tag/animepahe',
     });
   });
