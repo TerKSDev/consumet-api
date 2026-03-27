@@ -8,7 +8,7 @@ const routes = async (fastify: FastifyInstance, options: RegisterOptions) => {
   fastify.get('/gogoanime', (_, rp) => {
     rp.status(200).send({
       message: '此 gogoanime 路由實際使用 AnimePahe provider。',
-      routes: ['/:query', '/info/:id', '/watch/:episodeId'],
+      routes: ['/:query', '/info/*', '/watch/*'],
     });
   });
 
