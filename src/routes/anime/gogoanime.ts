@@ -48,14 +48,21 @@ const extractKwikSource = async (kwikUrl: string): Promise<SourceItem> => {
   });
 
   const html = await response.text();
-  const packedMatch = /;(eval)(\(f[\s\S]*?)(\n<\/script>)/.exec(html);
-  if (!packedMatch || !packedMatch[2]) {
-    throw new Error('kwik packed script not found (likely anti-bot or layout changed)');
+  const packedMatch = /eval\((function\(p,a,c,k,e,d\){.*?})\)/.exec(html);
+  if (!packedMatch || packedMatch.length < 2 || !packedMatch[1]) {
+    // Log the HTML content received to debug why packed script was not found
+    console.error('Kwik.cx: Failed to find packed script. HTML content snippet:', html.substring(0, 500));
+    throw new Error('Kwik packed script not found. Upstream anti-bot or layout changed.');
   }
 
-  const unpacked = safeUnpack(packedMatch[2]);
+  const unpacked = safeUnpack(packedMatch[1]);
+  if (!unpacked) {
+    throw new Error('Kwik packed script could not be unpacked.');
+  }
+
   const m3u8Match = unpacked.match(/https.*?m3u8/);
-  if (!m3u8Match || !m3u8Match[0]) {
+  if (!m3u8Match || m3u8Match.length < 1 || !m3u8Match[0]) {
+    console.error('Kwik.cx: Failed to find m3u8 source after unpack. Unpacked content snippet:', unpacked.substring(0, 500));
     throw new Error('m3u8 source not found after kwik unpack');
   }
 

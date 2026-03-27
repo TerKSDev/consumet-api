@@ -3,8 +3,8 @@
     "version": "1.0.0",
     "main": "src/app.ts",
     "scripts": {
-        "start": "ts-node api/server.ts",
-        "dev": "nodemon api/server.ts"
+        "start": "ts-node src/server.ts",
+        "dev": "nodemon src/server.ts"
     },
     "engines": {
         "node": ">=18.0.0",
