@@ -1,22 +1,31 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createApp } from '../src/app';
 
-// Initialize the Fastify app once
+// For Vercel serverless
 const appPromise = createApp();
 
-// Export the handler for Vercel
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    // Wait for the app to be fully initialized.
-    // On subsequent calls within the same container, this will resolve instantly.
     const app = await appPromise;
-
-    // Let Fastify handle the request.
     app.server.emit('request', req, res);
   } catch (error) {
-    // Log the error to Vercel logs for debugging
     console.error('Error in Vercel handler:', error);
     res.statusCode = 500;
     res.end('Internal Server Error');
   }
+}
+
+// Local dev: start Fastify server if run directly
+if (require.main === module) {
+  (async () => {
+    const app = await createApp();
+    const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
+    app.listen({ port, host: '0.0.0.0' }, (err, address) => {
+      if (err) {
+        console.error('Failed to start server:', err);
+        process.exit(1);
+      }
+      console.log(`🚀 Server listening at ${address}`);
+    });
+  })();
 }

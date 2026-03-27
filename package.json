@@ -2,10 +2,10 @@
     "name": "consumet",
     "version": "1.0.0",
     "main": "src/app.ts",
-    "scripts": {
-        "start": "ts-node src/server.ts",
-        "dev": "nodemon src/server.ts"
-    },
+"scripts": {
+    "start": "ts-node api/index.ts",
+    "dev": "nodemon api/index.ts"
+},
     "engines": {
         "node": ">=18.0.0",
         "yarn": ">=1.17.3"
