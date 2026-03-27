@@ -7,7 +7,7 @@
         "dev": "nodemon api/server.ts"
     },
     "engines": {
-        "node": ">=12.5.0",
+        "node": ">=18.0.0",
         "yarn": ">=1.17.3"
     },
     "repository": {
