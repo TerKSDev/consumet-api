@@ -1,4 +1,4 @@
-require('dotenv').config();
+import 'dotenv/config';
 
 import Fastify from 'fastify';
 import FastifyCors from '@fastify/cors';
@@ -12,7 +12,7 @@ import movies from './routes/movies';*/
 import meta from './routes/meta';
 
 (async () => {
-  const PORT = Number(process.env.PORT);
+  const PORT = Number(process.env.PORT) || 3000;
   const fastify = Fastify({
     logger: true,
   });
@@ -32,17 +32,15 @@ import meta from './routes/meta';
     fastify.get('/', (_, rp) => {
       rp.status(200).send('Welcome to consumet api! 🎉');
     });
-    fastify.get('*', (request, reply) => {
+
+    fastify.setNotFoundHandler((request, reply) => {
       reply.status(404).send({
-        message: '',
-        error: 'page not found',
+        message: `Route ${request.method}:${request.url} not found.`,
+        error: 'Page not found',
       });
     });
 
-    fastify.listen({ port: PORT, host: '0.0.0.0' }, (e, address) => {
-      if (e) throw e;
-      console.log(`server listening on ${address}`);
-    });
+    await fastify.listen({ port: PORT, host: '0.0.0.0' });
   } catch (err: any) {
     fastify.log.error(err);
     process.exit(1);

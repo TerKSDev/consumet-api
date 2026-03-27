@@ -2,12 +2,12 @@ import { FastifyRequest, FastifyReply, FastifyInstance, RegisterOptions } from '
 import { ANIME } from '@consumet/extensions';
 
 const routes = async (fastify: FastifyInstance, options: RegisterOptions) => {
-  // 這裡改用 Hianime，因為 Gogoanime 已經從套件中被移除了
+  // Gogoanime 已被棄用，此路由改用 AnimePahe 作為替代。
   const provider = new ANIME.AnimePahe();
 
   fastify.get('/gogoanime', (_, rp) => {
     rp.status(200).send({
-      message: 'Hianime provider is active (Redirected from Gogoanime route)',
+      message: '此 gogoanime 路由實際使用 AnimePahe provider。',
       routes: ['/:query', '/info/:id', '/watch/:episodeId'],
     });
   });
@@ -17,14 +17,12 @@ const routes = async (fastify: FastifyInstance, options: RegisterOptions) => {
     '/gogoanime/:query',
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { query } = request.params as { query: string };
-      console.log(`Searching for ${query}`);
 
       try {
         const res = await provider.search(query);
-        console.log('Search Result: ', res);
         reply.status(200).send(res);
       } catch (err: any) {
-        console.error('Search Error: ', err);
+        fastify.log.error(err, `Gogoanime (AnimePahe) search failed for query: ${query}`);
         reply.status(500).send({ error: err.message });
       }
     },
@@ -41,7 +39,8 @@ const routes = async (fastify: FastifyInstance, options: RegisterOptions) => {
         const res = await provider.fetchAnimeInfo(id);
         reply.status(200).send(res);
       } catch (err: any) {
-        reply.status(404).send({ message: 'Anime info not found' });
+        fastify.log.error(err, `Gogoanime (AnimePahe) info fetch failed for id: ${id}`);
+        reply.status(404).send({ message: 'Anime info not found', error: err.message });
       }
     },
   );
@@ -56,7 +55,11 @@ const routes = async (fastify: FastifyInstance, options: RegisterOptions) => {
         const res = await provider.fetchEpisodeSources(episodeId);
         reply.status(200).send(res);
       } catch (err: any) {
-        reply.status(404).send({ message: 'Sources not found' });
+        fastify.log.error(
+          err,
+          `Gogoanime (AnimePahe) watch fetch failed for episodeId: ${episodeId}`,
+        );
+        reply.status(404).send({ message: 'Sources not found', error: err.message });
       }
     },
   );

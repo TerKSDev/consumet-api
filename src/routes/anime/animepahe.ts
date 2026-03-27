@@ -4,7 +4,7 @@ import { ANIME } from '@consumet/extensions';
 const routes = async (fastify: FastifyInstance, options: RegisterOptions) => {
   const animepahe = new ANIME.AnimePahe();
 
-  fastify.get('/animephane', (_, rp) => {
+  fastify.get('/animepahe', (_, rp) => {
     rp.status(200).send({
       intro:
         "Welcome to the animepahe provider: check out the provider's website @ https://animepahe.com/",
@@ -16,52 +16,57 @@ const routes = async (fastify: FastifyInstance, options: RegisterOptions) => {
   fastify.get(
     '/animepahe/:query',
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const query = (request.params as { query: string }).query;
-
-      const res = await animepahe.search(query);
-
-      reply.status(200).send(res);
-    }
+      const { query } = request.params as { query: string };
+      try {
+        const res = await animepahe.search(query);
+        reply.status(200).send(res);
+      } catch (err: any) {
+        fastify.log.error(err, `AnimePahe search failed for query: ${query}`);
+        reply.status(500).send({ message: 'Something went wrong', error: err.message });
+      }
+    },
   );
 
   fastify.get(
-    '/animepahe/info/:id',
+    '/animepahe/info/*',
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const id = decodeURIComponent((request.params as { id: string }).id);
-
-      const episodePage = (request.query as { episodePage: number }).episodePage;
+      const id = (request.params as any)['*'];
+      const episodePage = Number((request.query as { episodePage?: string }).episodePage);
 
       try {
-        const res = await animepahe
-          .fetchAnimeInfo(id, episodePage)
-          .catch((err) => reply.status(404).send({ message: err }));
-
+        const res = await animepahe.fetchAnimeInfo(
+          id,
+          !isNaN(episodePage) ? episodePage : undefined,
+        );
         reply.status(200).send(res);
-      } catch (err) {
+      } catch (err: any) {
+        fastify.log.error(err, `AnimePahe info fetch failed for id: ${id}`);
         reply
-          .status(500)
-          .send({ message: 'Something went wrong. Contact developer for help.' });
+          .status(404)
+          .send({ message: `Anime info not found for id: ${id}`, error: err.message });
       }
-    }
+    },
   );
 
   fastify.get(
-    '/animepahe/watch/:episodeId',
+    '/animepahe/watch/*',
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const episodeId = (request.params as { episodeId: string }).episodeId;
+      const episodeId = (request.params as any)['*'];
 
       try {
-        const res = await animepahe
-          .fetchEpisodeSources(episodeId)
-          .catch((err) => reply.status(404).send({ message: err }));
-
+        const res = await animepahe.fetchEpisodeSources(episodeId);
         reply.status(200).send(res);
-      } catch (err) {
-        reply
-          .status(500)
-          .send({ message: 'Something went wrong. Contact developer for help.' });
+      } catch (err: any) {
+        fastify.log.error(
+          err,
+          `AnimePahe watch fetch failed for episodeId: ${episodeId}`,
+        );
+        reply.status(404).send({
+          message: `Sources not found for episodeId: ${episodeId}`,
+          error: err.message,
+        });
       }
-    }
+    },
   );
 };
 
