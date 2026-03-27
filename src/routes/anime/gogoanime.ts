@@ -31,10 +31,12 @@ const routes = async (fastify: FastifyInstance, options: RegisterOptions) => {
   );
 
   // 獲取詳情
+  // 獲取詳情 - 🌟 這裡也要改成 *，因為 AnimePahe 的 ID 也有斜線
   fastify.get(
-    '/gogoanime/info/:id',
+    '/gogoanime/info/*',
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const { id } = request.params as { id: string };
+      // 🌟 統一使用這種方式獲取 ID
+      const id = (request.params as any)['*'];
       try {
         const res = await provider.fetchAnimeInfo(id);
         reply.status(200).send(res);
