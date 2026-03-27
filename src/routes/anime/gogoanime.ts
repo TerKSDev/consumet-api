@@ -46,9 +46,10 @@ const routes = async (fastify: FastifyInstance, options: RegisterOptions) => {
 
   // 獲取播放連結
   fastify.get(
-    '/gogoanime/watch/:episodeId',
+    '/gogoanime/watch/*',
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const { episodeId } = request.params as { episodeId: string };
+      const episodeId = (request.params as any)['*'];
+
       try {
         const res = await provider.fetchEpisodeSources(episodeId);
         reply.status(200).send(res);
